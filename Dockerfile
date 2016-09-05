@@ -18,6 +18,7 @@ RUN cd tmp/ && \
 # Apache settings
 RUN sed -i 's/^#ServerName .*/ServerName localhost:80/g' /etc/apache2/httpd.conf && \
     sed -i 's/^LoadModule php7_module.*/LoadModule php7_module modules\/libphp7\.so/g' /etc/apache2/httpd.conf && \
+    echo "AddType application/x-httpd-php .php" >> /etc/apache2/httpd.conf && \
     mkdir -p /var/www/localhost/htdocs && \
     chown apache:apache /var/log/apache2 && \
     chown apache:apache /var/www/localhost/htdocs && \
