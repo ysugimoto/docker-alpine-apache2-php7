@@ -1,23 +1,29 @@
-FROM alpine:3.4
+FROM alpine:3.6
 MAINTAINER Yoshiaki Sugimoto <sugimoto@wnotes.net>
 
 # Packages
 RUN apk update && \
-    apk add openssl openssl-dev apache2 apache2-dev wget gcc g++ make ca-certificates libxml2 libxml2-dev procpus && \
+    apk add libressl-dev apache2 apache2-dev wget gcc g++ make ca-certificates libxml2 libxml2-dev curl curl-dev && \
     update-ca-certificates
 
 # Download and build PHP
 RUN cd tmp/ && \
-    wget https://downloads.php.net/~davey/php-7.1.0RC1.tar.gz && \
-    tar xvfz php-7.1.0RC1.tar.gz && \
-    cd php-7.1.0RC1 && \
-    ./configure --enable-mbsting --with-apxs2=/usr/bin/apxs && \
-    make && make install && \
-    cp php.ini-development /etc/php.ini
+    wget -O php-7.1.9.tar.gz http://jp2.php.net/get/php-7.1.9.tar.gz/from/this/mirror && \
+    tar xvfz php-7.1.9.tar.gz && \
+    cd php-7.1.9 && \
+    ./configure --enable-mbstring --with-curl=/usr/lib --with-apxs2=/usr/bin/apxs --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd && \
+    make && make install
+
+# PHP settings
+RUN cp tmp/php-7.1.9/php.ini-development /usr/local/lib/php.ini && \
+    sed -i 's/;mbstring\.language = Japanese/mbstring\.language = Japanese/g' /usr/local/lib/php.ini && \
+    sed -i 's/;mbstring\.internal_encoding =/mbstring\.internal_encoding = UTF-8/g' /usr/local/lib/php.ini && \
+    sed -i 's/;date\.timezone =/date\.timezone = Asia\/Tokyo/g' /usr/local/lib/php.ini
 
 # Apache settings
 RUN sed -i 's/^#ServerName .*/ServerName localhost:80/g' /etc/apache2/httpd.conf && \
     sed -i 's/^LoadModule php7_module.*/LoadModule php7_module modules\/libphp7\.so/g' /etc/apache2/httpd.conf && \
+    sed -i 's/DirectoryIndex index\.html/DirectoryIndex index\.php/g' /etc/apache2/httpd.conf && \
     echo "AddType application/x-httpd-php .php" >> /etc/apache2/httpd.conf && \
     mkdir -p /var/www/localhost/htdocs && \
     chown apache:apache /var/log/apache2 && \
